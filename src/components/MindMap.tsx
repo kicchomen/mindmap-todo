@@ -10,7 +10,6 @@ import ReactFlow, {
 import 'reactflow/dist/style.css'
 import { useMindMapStore } from '@/lib/store'
 import TodoNode from './TodoNode'
-import { Plus } from 'lucide-react'
 
 const nodeTypes: NodeTypes = {
   todoNode: TodoNode,
@@ -65,7 +64,7 @@ export default function MindMap() {
             onClick={handleAddRootTodo}
             className="bg-primary text-primary-foreground p-2 rounded-md flex items-center gap-1 text-sm"
           >
-            <Plus className="h-4 w-4" />
+            <span className="material-icons text-sm">add</span>
             Add Task
           </button>
           
@@ -73,14 +72,15 @@ export default function MindMap() {
             onClick={handleAddStandaloneTodo}
             className="bg-secondary text-secondary-foreground p-2 rounded-md flex items-center gap-1 text-sm"
           >
-            <Plus className="h-4 w-4" />
+            <span className="material-icons text-sm">add_circle</span>
             Add Standalone
           </button>
           
           <button
             onClick={fitView}
-            className="bg-secondary text-secondary-foreground p-2 rounded-md text-sm"
+            className="bg-secondary text-secondary-foreground p-2 rounded-md text-sm flex items-center gap-1"
           >
+            <span className="material-icons text-sm">fit_screen</span>
             Fit View
           </button>
         </Panel>
