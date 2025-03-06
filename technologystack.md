@@ -14,12 +14,10 @@
 - React Flow
 
 ## バックエンド
-- MySQL: ^8.0.0
-- Django: ^5.1.6
-- mysqlclient: 2.1.1
+なし。
+データの管理が必要であれば、localStorage や Google Drive 連携などを使うこと。
 
 ## 開発ツール
 - npm: ^10.0.0
 - ESLint: ^8.56.0
 - TypeScript: ^5.0.0
-- pipenv
