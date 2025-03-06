@@ -1,4 +1,3 @@
-import { Moon, Sun } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useTheme } from './theme-provider'
 
@@ -32,9 +31,9 @@ export default function Header({ darkMode, toggleDarkMode }: HeaderProps) {
           aria-label="Toggle theme"
         >
           {darkMode ? (
-            <Sun className="h-5 w-5" />
+            <span className="material-icons">light_mode</span>
           ) : (
-            <Moon className="h-5 w-5" />
+            <span className="material-icons">dark_mode</span>
           )}
         </button>
       </div>
