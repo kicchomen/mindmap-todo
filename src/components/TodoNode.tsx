@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { Handle, Position, NodeProps } from 'reactflow'
 import { cn } from '@/lib/utils'
-import { CheckCircle2, XCircle, Edit, Trash, ChevronRight, ChevronDown, Plus } from 'lucide-react'
 import { useMindMapStore, TodoNode as TodoNodeType } from '@/lib/store'
 
 interface TodoNodeData {
@@ -80,9 +79,9 @@ export default function TodoNode({ id, data }: NodeProps<TodoNodeData>) {
             className="mr-1 p-1 rounded-full hover:bg-muted"
           >
             {data.collapsed ? (
-              <ChevronRight className="h-4 w-4" />
+              <span className="material-icons text-sm">chevron_right</span>
             ) : (
-              <ChevronDown className="h-4 w-4" />
+              <span className="material-icons text-sm">expand_more</span>
             )}
           </button>
         )}
@@ -95,9 +94,9 @@ export default function TodoNode({ id, data }: NodeProps<TodoNodeData>) {
           )}
         >
           {data.completed ? (
-            <CheckCircle2 className="h-5 w-5" />
+            <span className="material-icons">check_circle</span>
           ) : (
-            <XCircle className="h-5 w-5" />
+            <span className="material-icons">cancel</span>
           )}
         </button>
       </div>
@@ -127,7 +126,7 @@ export default function TodoNode({ id, data }: NodeProps<TodoNodeData>) {
             onClick={handleEdit}
             className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
           >
-            <Edit className="h-4 w-4" />
+            <span className="material-icons text-sm">edit</span>
           </button>
           
           <button
@@ -135,14 +134,14 @@ export default function TodoNode({ id, data }: NodeProps<TodoNodeData>) {
             className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-destructive"
             disabled={id === 'root'}
           >
-            <Trash className="h-4 w-4" />
+            <span className="material-icons text-sm">delete</span>
           </button>
           
           <button
             onClick={handleAddChild}
             className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
           >
-            <Plus className="h-4 w-4" />
+            <span className="material-icons text-sm">add</span>
           </button>
         </div>
       </div>
