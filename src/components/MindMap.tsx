@@ -1,10 +1,9 @@
-import { useCallback, useState } from 'react'
+import { useCallback } from 'react'
 import ReactFlow, {
   Background,
   Controls,
   Node,
   NodeTypes,
-  Edge,
   Panel,
   useReactFlow,
   ConnectionLineType,
@@ -18,20 +17,19 @@ const nodeTypes: NodeTypes = {
   todoNode: TodoNode,
 }
 
-// Custom edge style
+// カスタムエッジスタイル - 直線に変更
 const edgeOptions = {
   style: { 
-    stroke: '#F59E0B', // Amber-500 (matching the orange node theme)
+    stroke: '#888', 
     strokeWidth: 2 
   },
-  type: 'smoothstep',
+  type: 'straight', // smoothstep から straight に変更
+  animated: false,
   markerEnd: {
     type: MarkerType.ArrowClosed,
-    color: '#F59E0B',
     width: 15,
     height: 15,
   },
-  animated: true,
 }
 
 export default function MindMap() {
@@ -39,24 +37,18 @@ export default function MindMap() {
     nodes, 
     edges, 
     onNodesChange, 
-    onEdgesChange, 
-    onConnect,
+    onEdgesChange,
     addTodo,
   } = useMindMapStore()
   
   const reactFlowInstance = useReactFlow()
-  const [isLoading, setIsLoading] = useState(false)
   
   const handleAddRootTodo = useCallback(() => {
-    setIsLoading(true)
     addTodo('root', 'New Task')
-    setTimeout(() => setIsLoading(false), 300)
   }, [addTodo])
   
   const handleAddStandaloneTodo = useCallback(() => {
-    setIsLoading(true)
     addTodo(null, 'New Standalone Task')
-    setTimeout(() => setIsLoading(false), 300)
   }, [addTodo])
   
   const fitView = useCallback(() => {
@@ -78,24 +70,24 @@ export default function MindMap() {
   })
   
   return (
-    <div className="w-full h-[calc(100vh-80px)] bg-gray-50 dark:bg-gray-900 border rounded-lg overflow-hidden">
+    <div className="w-full h-[calc(100vh-64px)]"> {/* 高さを調整して画面スクロールを防止 */}
       <ReactFlow
         nodes={nodesWithRoot}
         edges={edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
         nodeTypes={nodeTypes}
         fitView
         minZoom={0.2}
         maxZoom={1.5}
         defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
-        connectionLineType={ConnectionLineType.SmoothStep}
+        connectionLineType={ConnectionLineType.Straight} // 接続線の種類を直線に
         connectionLineStyle={{
-          stroke: '#F59E0B',
+          stroke: '#888',
           strokeWidth: 2,
         }}
         defaultEdgeOptions={edgeOptions}
+        connectOnClick={false} // ドラッグでノード間接続を無効化
       >
         <Background color="#aaa" gap={16} size={1} />
         <Controls position="bottom-right" showInteractive={false} />
@@ -103,8 +95,7 @@ export default function MindMap() {
         <Panel position="top-right" className="flex gap-2">
           <button
             onClick={handleAddRootTodo}
-            className="bg-orange-500 hover:bg-orange-600 text-white p-2 rounded-md flex items-center gap-1 text-sm transition-colors shadow-sm"
-            disabled={isLoading}
+            className="bg-primary text-primary-foreground p-2 rounded-md flex items-center gap-1 text-sm"
           >
             <span className="material-icons text-sm">add</span>
             Add Task
@@ -112,8 +103,7 @@ export default function MindMap() {
           
           <button
             onClick={handleAddStandaloneTodo}
-            className="bg-orange-400 hover:bg-orange-500 text-white p-2 rounded-md flex items-center gap-1 text-sm transition-colors shadow-sm"
-            disabled={isLoading}
+            className="bg-secondary text-secondary-foreground p-2 rounded-md flex items-center gap-1 text-sm"
           >
             <span className="material-icons text-sm">add_circle</span>
             Add Standalone
@@ -121,7 +111,7 @@ export default function MindMap() {
           
           <button
             onClick={fitView}
-            className="bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 p-2 rounded-md text-sm flex items-center gap-1 transition-colors shadow-sm"
+            className="bg-secondary text-secondary-foreground p-2 rounded-md text-sm flex items-center gap-1"
           >
             <span className="material-icons text-sm">fit_screen</span>
             Fit View
