@@ -173,7 +173,7 @@ function Flow() {
           <Header onSearch={handleSearch} />
           <SidePanel />
           <Controls showInteractive={false} />
-          <Background pattern={BackgroundVariant.Cross} gap={16} size={1} />
+          <Background variant={BackgroundVariant.Dots} gap={16} size={2} />
         </ReactFlow>
       </div>
     </div>
