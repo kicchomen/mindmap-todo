@@ -21,6 +21,7 @@ export type RFState = {
   onEdgesChange: OnEdgesChange;
   updateNodeLabel: (nodeId: string, label: string) => void;
   addChildNode: (parentNode: Node, position: XYPosition) => void;
+  toggleNodeCollapse: (nodeId: string) => void;
 };
 
 const useStore = create<RFState>((set, get) => ({
@@ -28,7 +29,7 @@ const useStore = create<RFState>((set, get) => ({
     {
       id: 'root',
       type: 'mindmap',
-      data: { label: 'React Flow Mind Map' },
+      data: { label: 'React Flow Mind Map', collapsed: false },
       position: { x: 0, y: 0 },
       dragHandle: '.dragHandle',
     },
@@ -60,10 +61,10 @@ const useStore = create<RFState>((set, get) => ({
     const newNode = {
       id: nanoid(),
       type: 'mindmap',
-      data: { label: 'New Node' },
+      data: { label: 'New Node', collapsed: false },
       position,
-      dragHandle: '.dragHandle',
       parentNode: parentNode.id,
+      dragHandle: '.dragHandle',
     };
 
     const newEdge = {
@@ -75,6 +76,69 @@ const useStore = create<RFState>((set, get) => ({
     set({
       nodes: [...get().nodes, newNode],
       edges: [...get().edges, newEdge],
+    });
+  },
+  toggleNodeCollapse: (nodeId: string) => {
+    // ノードの展開/折りたたみ状態を切り替える
+    const nodes = get().nodes.map((node) => {
+      if (node.id === nodeId) {
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            collapsed: !node.data.collapsed,
+          },
+        };
+      }
+      return node;
+    });
+
+    // 親ノードが折りたたまれているかどうかを確認
+    const parentNode = nodes.find((n) => n.id === nodeId);
+    const isParentCollapsed = parentNode?.data.collapsed;
+
+    // 影響を受けるノードとエッジのIDを収集する関数
+    const getDescendantIds = (nodeId: string): string[] => {
+      const directChildren = nodes.filter((n) => n.parentNode === nodeId).map((n) => n.id);
+      const allDescendants = [...directChildren];
+      
+      // 再帰的に子孫を取得
+      directChildren.forEach((childId) => {
+        allDescendants.push(...getDescendantIds(childId));
+      });
+      
+      return allDescendants;
+    };
+
+    // 対象ノードのすべての子孫IDを取得
+    const descendantIds = getDescendantIds(nodeId);
+
+    // ノードの表示/非表示を更新
+    const updatedNodes = nodes.map((node) => {
+      if (descendantIds.includes(node.id)) {
+        return {
+          ...node,
+          hidden: isParentCollapsed,
+        };
+      }
+      return node;
+    });
+
+    // エッジの表示/非表示を更新
+    const updatedEdges = get().edges.map((edge) => {
+      // 親ノードから子ノードへのエッジ、または子孫ノード間のエッジを非表示にする
+      if (edge.source === nodeId || descendantIds.includes(edge.source) || descendantIds.includes(edge.target)) {
+        return {
+          ...edge,
+          hidden: isParentCollapsed,
+        };
+      }
+      return edge;
+    });
+
+    set({ 
+      nodes: updatedNodes,
+      edges: updatedEdges
     });
   },
 }));
