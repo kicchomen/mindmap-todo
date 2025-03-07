@@ -50,41 +50,38 @@ function Flow() {
     selector,
     shallow
   );
-  const { project, fitView } = useReactFlow();
-  const connectingNodeId = useRef<string | null>(null);
+  const [connectingNodeId, setConnectingNodeId] = useState<string | null>(null);
+  const connectingNodeRef = useRef<string | null>(null);
+  const reactFlowInstance = useReactFlow();
+  const [searchHighlightedNodes, setSearchHighlightedNodes] = useState<string[]>([]);
 
   const getChildNodePosition = (event: MouseEvent, parentNode?: Node) => {
     const { domNode } = store.getState();
 
     if (
       !domNode ||
-      // we need to check if these properites exist, because when a node is not initialized yet,
-      // it doesn't have a positionAbsolute nor a width or height
       !parentNode?.positionAbsolute ||
-      !parentNode?.width ||
-      !parentNode?.height
+      !event.target ||
+      !(event.target instanceof HTMLElement)
     ) {
       return;
     }
 
     const { top, left } = domNode.getBoundingClientRect();
-
-    // we need to remove the wrapper bounds, in order to get the correct mouse position
-    const panePosition = project({
+    const panePosition = reactFlowInstance.project({
       x: event.clientX - left,
       y: event.clientY - top,
     });
 
-    // we are calculating with positionAbsolute here because child nodes are positioned relative to their parent
     return {
-      x: panePosition.x - parentNode.positionAbsolute.x + parentNode.width / 2,
-      y: panePosition.y - parentNode.positionAbsolute.y + parentNode.height / 2,
+      x: panePosition.x,
+      y: panePosition.y,
     };
   };
 
   const onConnectStart: OnConnectStart = useCallback((_, { nodeId }) => {
-    // we need to remember where the connection started so we can add the new node to the correct parent on connect end
-    connectingNodeId.current = nodeId;
+    connectingNodeRef.current = nodeId;
+    setConnectingNodeId(nodeId);
   }, []);
 
   const onConnectEnd: OnConnectEnd = useCallback(
@@ -97,48 +94,83 @@ function Flow() {
 
       if (node) {
         node.querySelector('input')?.focus({ preventScroll: true });
-      } else if (targetIsPane && connectingNodeId.current) {
-        const parentNode = nodeInternals.get(connectingNodeId.current);
-        const childNodePosition = getChildNodePosition(event, parentNode);
+      } else if (targetIsPane && connectingNodeRef.current) {
+        const parentNode = nodeInternals.get(connectingNodeRef.current);
+        const childNodePosition = getChildNodePosition(
+          event as unknown as MouseEvent,
+          parentNode
+        );
 
         if (parentNode && childNodePosition) {
           addChildNode(parentNode, childNodePosition);
         }
       }
+
+      setConnectingNodeId(null);
+      connectingNodeRef.current = null;
     },
     [getChildNodePosition]
   );
 
-  // ノードをクリックした際の処理
-  const handleNodeClick = useCallback((nodeId: string) => {
-    const node = nodes.find(n => n.id === nodeId);
-    if (node) {
-      // ノードを中心に表示
-      fitView({ nodes: [node], duration: 800, padding: 0.5 });
+  // 検索機能の実装
+  const handleSearch = (query: string) => {
+    // 検索クエリが空の場合はハイライトをクリア
+    if (!query) {
+      setSearchHighlightedNodes([]);
+      return;
     }
-  }, [nodes, fitView]);
+
+    // 検索クエリに一致するノードを検索
+    const matchingNodeIds = nodes
+      .filter(node => 
+        node.data.label.toLowerCase().includes(query.toLowerCase())
+      )
+      .map(node => node.id);
+
+    // 一致するノードをハイライト
+    setSearchHighlightedNodes(matchingNodeIds);
+
+    // 一致するノードが見つかった場合、最初のノードにビューをセンタリング
+    if (matchingNodeIds.length > 0) {
+      const firstMatchingNode = nodes.find(node => node.id === matchingNodeIds[0]);
+      if (firstMatchingNode && firstMatchingNode.position) {
+        reactFlowInstance.setCenter(
+          firstMatchingNode.position.x,
+          firstMatchingNode.position.y,
+          { duration: 800 }
+        );
+      }
+    }
+  };
 
   return (
-    <div className="relative w-full h-full">
-      <Header />
-      <SidePanel nodes={nodes} onNodeClick={handleNodeClick} />
+    <div className="flex h-screen">
       <ReactFlow
-        nodes={nodes}
+        nodes={nodes.map(node => ({
+          ...node,
+          // 検索結果に含まれるノードをハイライト
+          className: searchHighlightedNodes.includes(node.id) ? 'search-highlighted' : undefined
+        }))}
         edges={edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
-        onConnectStart={onConnectStart}
-        onConnectEnd={onConnectEnd}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
-        nodeOrigin={nodeOrigin}
-        defaultEdgeOptions={defaultEdgeOptions}
+        onConnectStart={onConnectStart}
+        onConnectEnd={onConnectEnd}
         connectionLineStyle={connectionLineStyle}
         connectionLineType={ConnectionLineType.Straight}
+        defaultEdgeOptions={defaultEdgeOptions}
+        nodeOrigin={nodeOrigin}
+        className="bg-slate-50"
         fitView
+        minZoom={0.2}
+        maxZoom={1.5}
       >
+        <Header onSearch={handleSearch} />
+        <SidePanel />
         <Controls showInteractive={false} />
-        <Background variant={BackgroundVariant.Dots} gap={16} size={2} />
+        <Background pattern={BackgroundVariant.Cross} gap={16} size={1} />
       </ReactFlow>
     </div>
   );
