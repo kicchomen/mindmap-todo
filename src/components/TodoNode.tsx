@@ -92,10 +92,17 @@ export default function TodoNode({ id, data, selected }: NodeProps<TodoNodeData>
         transition: 'all 0.2s ease'
       }}
     >
+      {/* ハンドルを完全に非表示に */}
       <Handle 
         type="target" 
-        position={Position.Left} 
-        className="w-2 h-2 bg-orange-500 border-orange-600" 
+        position={Position.Top} 
+        style={{ 
+          opacity: 0,
+          width: 0,
+          height: 0,
+          top: '50%',
+          transform: 'translateY(-50%)'
+        }}
       />
       
       <div className="flex items-center gap-1">
@@ -180,10 +187,17 @@ export default function TodoNode({ id, data, selected }: NodeProps<TodoNodeData>
         </div>
       )}
       
+      {/* ハンドルを完全に非表示に */}
       <Handle 
         type="source" 
-        position={Position.Right} 
-        className="w-2 h-2 bg-orange-500 border-orange-600" 
+        position={Position.Bottom}
+        style={{ 
+          opacity: 0,
+          width: 0,
+          height: 0,
+          bottom: '50%',
+          transform: 'translateY(50%)'
+        }}
       />
     </div>
   )

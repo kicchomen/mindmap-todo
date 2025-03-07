@@ -8,7 +8,6 @@ import ReactFlow, {
   Panel,
   useReactFlow,
   ConnectionLineType,
-  MarkerType,
 } from 'reactflow'
 import 'reactflow/dist/style.css'
 import { useMindMapStore } from '@/lib/store'
@@ -18,20 +17,15 @@ const nodeTypes: NodeTypes = {
   todoNode: TodoNode,
 }
 
-// Custom edge style
+// Custom edge style - 実線に変更、矢印なし
 const edgeOptions = {
   style: { 
     stroke: '#F59E0B', // Amber-500 (matching the orange node theme)
-    strokeWidth: 2 
+    strokeWidth: 2,
+    strokeDasharray: '0', // 点線を無効化
   },
-  type: 'smoothstep',
-  markerEnd: {
-    type: MarkerType.ArrowClosed,
-    color: '#F59E0B',
-    width: 15,
-    height: 15,
-  },
-  animated: true,
+  type: 'straight',
+  animated: false,
 }
 
 export default function MindMap() {
@@ -90,10 +84,11 @@ export default function MindMap() {
         minZoom={0.2}
         maxZoom={1.5}
         defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
-        connectionLineType={ConnectionLineType.SmoothStep}
+        connectionLineType={ConnectionLineType.Straight}
         connectionLineStyle={{
           stroke: '#F59E0B',
           strokeWidth: 2,
+          strokeDasharray: '0', // 点線を無効化
         }}
         defaultEdgeOptions={edgeOptions}
       >

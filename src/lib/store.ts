@@ -90,8 +90,12 @@ export const useMindMapStore = create<MindMapState>()(
         set({
           edges: addEdge({ 
             ...connection, 
-            type: 'smoothstep',
-            style: { stroke: '#F59E0B', strokeWidth: 2 }
+            type: 'straight',
+            style: { 
+              stroke: '#F59E0B', 
+              strokeWidth: 2,
+              strokeDasharray: '0'
+            }
           }, get().edges),
         })
       },
@@ -123,14 +127,18 @@ export const useMindMapStore = create<MindMapState>()(
             position.x = parentNode.position.x + 250
             position.y = parentNode.position.y + (parentChildren.length * 80) - (parentChildren.length > 0 ? 40 * parentChildren.length : 0)
             
-            // Create an edge from parent to new node
+            // Create an edge from parent to new node with updated style
             const newEdge: Edge = {
               id: `e${parentId}-${id}`,
               source: parentId,
               target: id,
-              type: 'smoothstep',
-              style: { stroke: '#F59E0B', strokeWidth: 2 },
-              animated: true
+              type: 'straight',
+              style: { 
+                stroke: '#F59E0B', 
+                strokeWidth: 2,
+                strokeDasharray: '0'
+              },
+              animated: false
             }
             
             set({
