@@ -19,6 +19,7 @@ import MindMapNode from './MindMapNode';
 import MindMapEdge from './MindMapEdge';
 import Header from '../components/layout/Header';
 import SidePanel from '../components/layout/SidePanel';
+import NavigationBar from '../components/layout/NavigationBar';
 
 // we need to import the React Flow styles to make it work
 import 'reactflow/dist/style.css';
@@ -145,33 +146,36 @@ function Flow() {
 
   return (
     <div className="flex h-screen">
-      <ReactFlow
-        nodes={nodes.map(node => ({
-          ...node,
-          // 検索結果に含まれるノードをハイライト
-          className: searchHighlightedNodes.includes(node.id) ? 'search-highlighted' : undefined
-        }))}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        nodeTypes={nodeTypes}
-        edgeTypes={edgeTypes}
-        onConnectStart={onConnectStart}
-        onConnectEnd={onConnectEnd}
-        connectionLineStyle={connectionLineStyle}
-        connectionLineType={ConnectionLineType.Straight}
-        defaultEdgeOptions={defaultEdgeOptions}
-        nodeOrigin={nodeOrigin}
-        className="bg-slate-50"
-        fitView
-        minZoom={0.2}
-        maxZoom={1.5}
-      >
-        <Header onSearch={handleSearch} />
-        <SidePanel />
-        <Controls showInteractive={false} />
-        <Background pattern={BackgroundVariant.Cross} gap={16} size={1} />
-      </ReactFlow>
+      <NavigationBar />
+      <div className="flex-1 ml-16">
+        <ReactFlow
+          nodes={nodes.map(node => ({
+            ...node,
+            // 検索結果に含まれるノードをハイライト
+            className: searchHighlightedNodes.includes(node.id) ? 'search-highlighted' : undefined
+          }))}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
+          onConnectStart={onConnectStart}
+          onConnectEnd={onConnectEnd}
+          connectionLineStyle={connectionLineStyle}
+          connectionLineType={ConnectionLineType.Straight}
+          defaultEdgeOptions={defaultEdgeOptions}
+          nodeOrigin={nodeOrigin}
+          className="bg-slate-50"
+          fitView
+          minZoom={0.2}
+          maxZoom={1.5}
+        >
+          <Header onSearch={handleSearch} />
+          <SidePanel />
+          <Controls showInteractive={false} />
+          <Background pattern={BackgroundVariant.Cross} gap={16} size={1} />
+        </ReactFlow>
+      </div>
     </div>
   );
 }

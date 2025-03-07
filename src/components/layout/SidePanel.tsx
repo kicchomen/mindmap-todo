@@ -83,7 +83,7 @@ const SidePanel: React.FC<SidePanelProps> = ({ className }) => {
   const rootNodes = nodes.filter(node => !node.parentNode && !node.hidden);
   
   return (
-    <div className={`fixed top-24 left-4 z-40 bg-white/95 backdrop-blur-sm shadow-md rounded-3xl p-3 max-w-xs w-64 max-h-[calc(100vh-140px)] overflow-auto border-2 border-gray-300 ${className || ''}`}>
+    <div className={`fixed top-24 left-20 z-40 bg-white/95 backdrop-blur-sm shadow-md rounded-3xl p-3 max-w-xs w-64 max-h-[calc(100vh-140px)] overflow-auto border-2 border-gray-300 ${className || ''}`}>
       <div className="mb-2 pb-2 border-b border-gray-200">
         <h2 className="text-sm font-semibold text-gray-700">Todo ツリー</h2>
       </div>

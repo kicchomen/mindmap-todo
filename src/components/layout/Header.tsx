@@ -26,7 +26,7 @@ const Header: React.FC<HeaderProps> = ({ className, onSearch }) => {
   };
 
   return (
-    <header className={`fixed top-4 left-4 z-50 bg-white/90 backdrop-blur-sm shadow-md rounded-full px-4 py-2 flex items-center justify-between border-2 border-gray-300 ${className || ''}`}>
+    <header className={`fixed top-4 left-20 z-50 bg-white/90 backdrop-blur-sm shadow-md rounded-full px-4 py-2 flex items-center justify-between border-2 border-gray-300 ${className || ''}`}>
       <div className="flex items-center space-x-2">
         <AccountTreeIcon className="text-gray-800" />
         <h1 className="text-lg font-semibold text-gray-800">MindMap Todo</h1>
