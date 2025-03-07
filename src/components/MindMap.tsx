@@ -6,6 +6,8 @@ import ReactFlow, {
   NodeTypes,
   Panel,
   useReactFlow,
+  ConnectionLineType,
+  MarkerType,
 } from 'reactflow'
 import 'reactflow/dist/style.css'
 import { useMindMapStore } from '@/lib/store'
@@ -15,13 +17,27 @@ const nodeTypes: NodeTypes = {
   todoNode: TodoNode,
 }
 
+// カスタムエッジスタイル - 直線に変更
+const edgeOptions = {
+  style: { 
+    stroke: '#888', 
+    strokeWidth: 2 
+  },
+  type: 'straight', // smoothstep から straight に変更
+  animated: false,
+  markerEnd: {
+    type: MarkerType.ArrowClosed,
+    width: 15,
+    height: 15,
+  },
+}
+
 export default function MindMap() {
   const { 
     nodes, 
     edges, 
     onNodesChange, 
-    onEdgesChange, 
-    onConnect,
+    onEdgesChange,
     addTodo,
   } = useMindMapStore()
   
@@ -39,25 +55,42 @@ export default function MindMap() {
     reactFlowInstance.fitView({ padding: 0.2 })
   }, [reactFlowInstance])
   
+  // Mark the root node
+  const nodesWithRoot = nodes.map(node => {
+    if (node.id === 'root') {
+      return {
+        ...node,
+        data: {
+          ...node.data,
+          isRoot: true
+        }
+      }
+    }
+    return node
+  })
+  
   return (
-    <div className="w-full h-[calc(100vh-80px)] bg-background border rounded-lg">
+    <div className="w-full h-[calc(100vh-64px)]"> {/* 高さを調整して画面スクロールを防止 */}
       <ReactFlow
-        nodes={nodes}
+        nodes={nodesWithRoot}
         edges={edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
         nodeTypes={nodeTypes}
         fitView
-        attributionPosition="bottom-right"
-        defaultEdgeOptions={{
-          type: 'smoothstep',
-          style: { stroke: '#6366f1', strokeWidth: 2 },
-          animated: true,
+        minZoom={0.2}
+        maxZoom={1.5}
+        defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
+        connectionLineType={ConnectionLineType.Straight} // 接続線の種類を直線に
+        connectionLineStyle={{
+          stroke: '#888',
+          strokeWidth: 2,
         }}
+        defaultEdgeOptions={edgeOptions}
+        connectOnClick={false} // ドラッグでノード間接続を無効化
       >
-        <Background color="#aaa" gap={16} />
-        <Controls />
+        <Background color="#aaa" gap={16} size={1} />
+        <Controls position="bottom-right" showInteractive={false} />
         
         <Panel position="top-right" className="flex gap-2">
           <button
