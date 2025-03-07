@@ -23,6 +23,8 @@ interface MindMapState {
   nodes: Node[]
   edges: Edge[]
   todos: Record<string, TodoNode>
+  hiddenNodes: Node[]
+  hiddenEdges: Edge[]
   onNodesChange: (changes: NodeChange[]) => void
   onEdgesChange: (changes: EdgeChange[]) => void
   onConnect: (connection: Connection) => void
@@ -69,6 +71,8 @@ export const useMindMapStore = create<MindMapState>()(
       nodes: initialNodes,
       edges: [],
       todos: initialTodos,
+      hiddenNodes: [],
+      hiddenEdges: [],
       
       onNodesChange: (changes: NodeChange[]) => {
         set({
@@ -280,6 +284,14 @@ export const useMindMapStore = create<MindMapState>()(
             !todo.children?.includes(edge.source) && 
             !todo.children?.includes(edge.target)
           ),
+          hiddenNodes: get().hiddenNodes.filter(node => 
+            node.id !== id && !todo.children?.includes(node.id)
+          ),
+          hiddenEdges: get().hiddenEdges.filter(edge => 
+            edge.source !== id && edge.target !== id &&
+            !todo.children?.includes(edge.source) && 
+            !todo.children?.includes(edge.target)
+          ),
         })
       },
       
@@ -292,7 +304,7 @@ export const useMindMapStore = create<MindMapState>()(
             collapsed,
           }
           
-          const { nodes, edges } = get()
+          const { nodes, edges, hiddenNodes, hiddenEdges } = get()
           
           // Update node data
           const updatedNodes = nodes.map(node => 
@@ -321,30 +333,55 @@ export const useMindMapStore = create<MindMapState>()(
           
           const childrenIds = processChildren(id, collapsed)
           
-          // Update visibility of child nodes and edges
-          const visibleNodes = collapsed 
-            ? updatedNodes.filter(node => !childrenIds.includes(node.id))
-            : updatedNodes
+          if (collapsed) {
+            // ノードを閉じる場合: ノードを非表示にして隠れたノードのリストに追加
+            const nodesToHide = nodes.filter(node => childrenIds.includes(node.id))
+            const edgesToHide = edges.filter(edge => 
+              childrenIds.includes(edge.target) || childrenIds.includes(edge.source)
+            )
             
-          const visibleEdges = collapsed
-            ? edges.filter(edge => 
-                !childrenIds.includes(edge.target) && 
-                !childrenIds.includes(edge.source))
-            : edges
-          
-          set({
-            todos: {
-              ...get().todos,
-              [id]: updatedTodo,
-            },
-            nodes: visibleNodes,
-            edges: visibleEdges,
-          })
+            set({
+              todos: {
+                ...get().todos,
+                [id]: updatedTodo,
+              },
+              nodes: updatedNodes.filter(node => !childrenIds.includes(node.id)),
+              edges: edges.filter(edge => 
+                !childrenIds.includes(edge.target) && !childrenIds.includes(edge.source)
+              ),
+              hiddenNodes: [...hiddenNodes, ...nodesToHide],
+              hiddenEdges: [...hiddenEdges, ...edgesToHide],
+            })
+          } else {
+            // ノードを開く場合: 隠れたノードのリストから対象の子ノードを復元
+            const nodesToShow = hiddenNodes.filter(node => childrenIds.includes(node.id))
+            const edgesToShow = hiddenEdges.filter(edge => 
+              (childrenIds.includes(edge.source) || childrenIds.includes(edge.target))
+            )
+            
+            set({
+              todos: {
+                ...get().todos,
+                [id]: updatedTodo,
+              },
+              nodes: [...updatedNodes, ...nodesToShow],
+              edges: [...edges, ...edgesToShow],
+              hiddenNodes: hiddenNodes.filter(node => !childrenIds.includes(node.id)),
+              hiddenEdges: hiddenEdges.filter(edge => 
+                !(childrenIds.includes(edge.source) || childrenIds.includes(edge.target))
+              ),
+            })
+          }
         }
       },
     }),
     {
       name: 'mindmap-todo-storage',
+      partialize: (state) => ({
+        nodes: state.nodes,
+        edges: state.edges,
+        todos: state.todos,
+      }),
     }
   )
 )
