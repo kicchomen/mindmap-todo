@@ -79,6 +79,14 @@ body,
   pointer-events: none;
 }
 
+/* ルートノードのスタイル */
+.react-flow__node-mindmap[data-id="root"] {
+  border: 3px solid #f6ad55;
+}
+.react-flow__node-mindmap[data-id="root"] > div:not(.inputWrapper) {
+  background-color: white;
+}
+
 .input:focus {
   border: none;
   outline: none;
