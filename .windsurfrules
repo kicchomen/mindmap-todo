@@ -74,7 +74,7 @@
 
 ## プロジェクト構造規約
 ```
-react-flow-mindmap-app/
+mindmap-todo/
 ├── src/
 │   ├── components/          # コンポーネント
 │   │   ├── ui/             # 基本UI要素
