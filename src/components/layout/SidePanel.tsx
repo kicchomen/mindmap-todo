@@ -1,32 +1,36 @@
 import React from 'react';
-import { Node } from 'reactflow';
+import useStore from '../../App/store';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { NodeData } from '../../App/MindMapNode';
+import { useReactFlow } from 'reactflow';
 
 interface SidePanelProps {
-  nodes: Node<NodeData>[];
-  onNodeClick?: (nodeId: string) => void;
   className?: string;
 }
 
 interface TreeNodeProps {
-  node: Node<NodeData>;
-  nodes: Node<NodeData>[];
+  node: any;
+  nodes: any[];
   level: number;
-  onNodeClick?: (nodeId: string) => void;
+  reactFlowInstance: any;
 }
 
-const TreeNode: React.FC<TreeNodeProps> = ({ node, nodes, level, onNodeClick }) => {
+const TreeNode: React.FC<TreeNodeProps> = ({ node, nodes, level, reactFlowInstance }) => {
   const [expanded, setExpanded] = React.useState(level < 2);
   
   // Find child nodes
-  const childNodes = nodes.filter(n => n.parentNode === node.id);
+  const childNodes = nodes.filter(n => n.parentNode === node.id && !n.hidden);
   const hasChildren = childNodes.length > 0;
   
   const handleClick = () => {
-    if (onNodeClick) {
-      onNodeClick(node.id);
+    // ノードをクリックした際に、そのノードにビューをセンタリング
+    if (node.position) {
+      reactFlowInstance.setCenter(
+        node.position.x,
+        node.position.y,
+        { duration: 800 }
+      );
     }
   };
   
@@ -61,7 +65,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({ node, nodes, level, onNodeClick }) 
               node={childNode} 
               nodes={nodes} 
               level={level + 1}
-              onNodeClick={onNodeClick}
+              reactFlowInstance={reactFlowInstance}
             />
           ))}
         </div>
@@ -70,12 +74,16 @@ const TreeNode: React.FC<TreeNodeProps> = ({ node, nodes, level, onNodeClick }) 
   );
 };
 
-const SidePanel: React.FC<SidePanelProps> = ({ nodes, onNodeClick, className }) => {
-  // Find root nodes (nodes without a parent)
-  const rootNodes = nodes.filter(node => !node.parentNode);
+const SidePanel: React.FC<SidePanelProps> = ({ className }) => {
+  // storeからノードを取得
+  const nodes = useStore(state => state.nodes);
+  const reactFlowInstance = useReactFlow();
+  
+  // 非表示でないルートノードを取得
+  const rootNodes = nodes.filter(node => !node.parentNode && !node.hidden);
   
   return (
-    <div className={`fixed top-20 left-4 z-40 bg-white/95 backdrop-blur-sm shadow-md rounded-lg p-3 max-w-xs w-64 max-h-[calc(100vh-120px)] overflow-auto ${className || ''}`}>
+    <div className={`fixed top-24 left-4 z-40 bg-white/95 backdrop-blur-sm shadow-md rounded-3xl p-3 max-w-xs w-64 max-h-[calc(100vh-140px)] overflow-auto border-2 border-gray-300 ${className || ''}`}>
       <div className="mb-2 pb-2 border-b border-gray-200">
         <h2 className="text-sm font-semibold text-gray-700">Todo ツリー</h2>
       </div>
@@ -86,7 +94,7 @@ const SidePanel: React.FC<SidePanelProps> = ({ nodes, onNodeClick, className }) 
             node={node} 
             nodes={nodes} 
             level={0}
-            onNodeClick={onNodeClick}
+            reactFlowInstance={reactFlowInstance}
           />
         ))}
       </div>
