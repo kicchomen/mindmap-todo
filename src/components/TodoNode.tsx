@@ -14,7 +14,7 @@ interface TodoNodeData {
 export default function TodoNode({ id, data, selected }: NodeProps<TodoNodeData>) {
   const [isEditing, setIsEditing] = useState(false)
   const [text, setText] = useState(data.label)
-  const [isExpanded, setIsExpanded] = useState(false)
+  const [isHovered, setIsHovered] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   
   const { 
@@ -29,15 +29,6 @@ export default function TodoNode({ id, data, selected }: NodeProps<TodoNodeData>
   const todo = todos[id] as TodoNodeType
   const hasChildren = todo?.children && todo.children.length > 0
   const isRoot = id === 'root' || data.isRoot
-  
-  // When node is selected, expand it
-  useEffect(() => {
-    if (selected) {
-      setIsExpanded(true)
-    } else {
-      setIsExpanded(false)
-    }
-  }, [selected])
   
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -79,69 +70,33 @@ export default function TodoNode({ id, data, selected }: NodeProps<TodoNodeData>
   return (
     <div 
       className={cn(
-        "rounded-md p-2 shadow-sm",
-        "transition-all duration-200",
+        "rounded-md p-3 shadow-sm transition-all duration-200",
         isRoot 
-          ? "bg-orange-400 text-gray-900 min-w-[150px]" 
-          : "bg-orange-300 text-gray-900 min-w-[120px]",
-        selected || isExpanded 
-          ? "shadow-lg scale-110 z-10" 
+          ? "bg-white text-gray-900 border-2 border-primary font-semibold min-w-[180px]" // 親ノードを白抜きに
+          : "bg-primary text-white min-w-[160px]",
+        selected || isHovered
+          ? "shadow-lg scale-105 z-10" 
           : "hover:shadow-md"
       )}
-      style={{ 
-        transition: 'all 0.2s ease'
-      }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       <Handle 
         type="target" 
         position={Position.Left} 
-        className="w-2 h-2 bg-orange-500 border-orange-600" 
+        className="w-2 h-2 bg-blue-500" 
       />
       
-      <div className="flex items-center gap-1">
-        <div className="text-gray-700 mr-1">
-          <span className="material-icons text-base select-none">drag_indicator</span>
-        </div>
-        
-        {!isEditing ? (
-          <div className="font-medium truncate">
-            {data.label}
-          </div>
-        ) : (
-          <input
-            ref={inputRef}
-            type="text"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            onBlur={handleSave}
-            onKeyDown={handleKeyDown}
-            className="bg-white/90 p-1 rounded text-sm w-full"
-            autoFocus
-          />
-        )}
-      </div>
-      
-      {(selected || isExpanded) && (
-        <div className="flex mt-2 justify-end space-x-1 animate-in fade-in zoom-in duration-200">
-          {hasChildren && (
-            <button 
-              onClick={handleToggleCollapse}
-              className="p-1 rounded-full hover:bg-orange-200 text-gray-700"
-              title={data.collapsed ? "Expand" : "Collapse"}
-            >
-              {data.collapsed ? (
-                <span className="material-icons text-sm">chevron_right</span>
-              ) : (
-                <span className="material-icons text-sm">expand_more</span>
-              )}
-            </button>
-          )}
+      {!isEditing ? (
+        <div className="font-medium mb-2 flex justify-between items-center">
+          <div className="truncate flex-grow">{data.label}</div>
           
+          {/* チェックボタンを常時表示 */}
           <button
             onClick={handleToggleComplete}
             className={cn(
-              "p-1 rounded-full hover:bg-orange-200",
-              data.completed ? "text-green-600" : "text-gray-700"
+              "p-1 rounded-full ml-2",
+              data.completed ? "text-green-500" : "text-gray-400"
             )}
             title={data.completed ? "Mark as incomplete" : "Mark as complete"}
           >
@@ -151,39 +106,74 @@ export default function TodoNode({ id, data, selected }: NodeProps<TodoNodeData>
               <span className="material-icons text-sm">radio_button_unchecked</span>
             )}
           </button>
-          
-          <button
-            onClick={handleEdit}
-            className="p-1 rounded-full hover:bg-orange-200 text-gray-700"
-            title="Edit"
-          >
-            <span className="material-icons text-sm">edit</span>
-          </button>
-          
-          {!isRoot && (
-            <button
-              onClick={handleDelete}
-              className="p-1 rounded-full hover:bg-orange-200 text-gray-700"
-              title="Delete"
+        </div>
+      ) : (
+        <input
+          ref={inputRef}
+          type="text"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onBlur={handleSave}
+          onKeyDown={handleKeyDown}
+          className="bg-white text-gray-900 p-2 rounded text-sm w-full mb-2"
+          autoFocus
+        />
+      )}
+      
+      <div className="flex justify-between items-center">
+        {/* 開閉ボタンを常時表示 */}
+        <div>
+          {hasChildren && (
+            <button 
+              onClick={handleToggleCollapse}
+              className="p-1 rounded-full hover:bg-opacity-20 hover:bg-gray-500"
+              title={data.collapsed ? "Expand" : "Collapse"}
             >
-              <span className="material-icons text-sm">delete</span>
+              {data.collapsed ? (
+                <span className="material-icons text-sm">chevron_right</span>
+              ) : (
+                <span className="material-icons text-sm">expand_more</span>
+              )}
             </button>
           )}
-          
-          <button
-            onClick={handleAddChild}
-            className="p-1 rounded-full hover:bg-orange-200 text-gray-700"
-            title="Add child task"
-          >
-            <span className="material-icons text-sm">add</span>
-          </button>
         </div>
-      )}
+        
+        {/* アクションボタン - ホバー時または選択時のみ表示 */}
+        {(selected || isHovered) && (
+          <div className="flex space-x-1">
+            <button
+              onClick={handleEdit}
+              className="p-1 rounded-full hover:bg-opacity-20 hover:bg-gray-500"
+              title="Edit"
+            >
+              <span className="material-icons text-sm">edit</span>
+            </button>
+            
+            {!isRoot && (
+              <button
+                onClick={handleDelete}
+                className="p-1 rounded-full hover:bg-opacity-20 hover:bg-gray-500"
+                title="Delete"
+              >
+                <span className="material-icons text-sm">delete</span>
+              </button>
+            )}
+            
+            <button
+              onClick={handleAddChild}
+              className="p-1 rounded-full hover:bg-opacity-20 hover:bg-gray-500"
+              title="Add child task"
+            >
+              <span className="material-icons text-sm">add</span>
+            </button>
+          </div>
+        )}
+      </div>
       
       <Handle 
         type="source" 
         position={Position.Right} 
-        className="w-2 h-2 bg-orange-500 border-orange-600" 
+        className="w-2 h-2 bg-blue-500" 
       />
     </div>
   )
