@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import ReactFlow, {
   ConnectionLineType,
   NodeOrigin,
@@ -16,6 +16,7 @@ import useStore, { RFState } from './store';
 import MindMapNode from './MindMapNode';
 import MindMapEdge from './MindMapEdge';
 import Header from '../components/layout/Header';
+import SidePanel from '../components/layout/SidePanel';
 
 // we need to import the React Flow styles to make it work
 import 'reactflow/dist/style.css';
@@ -47,7 +48,7 @@ function Flow() {
     selector,
     shallow
   );
-  const { project } = useReactFlow();
+  const { project, fitView } = useReactFlow();
   const connectingNodeId = useRef<string | null>(null);
 
   const getChildNodePosition = (event: MouseEvent, parentNode?: Node) => {
@@ -106,9 +107,19 @@ function Flow() {
     [getChildNodePosition]
   );
 
+  // ノードをクリックした際の処理
+  const handleNodeClick = useCallback((nodeId: string) => {
+    const node = nodes.find(n => n.id === nodeId);
+    if (node) {
+      // ノードを中心に表示
+      fitView({ nodes: [node], duration: 800, padding: 0.5 });
+    }
+  }, [nodes, fitView]);
+
   return (
     <div className="relative w-full h-full">
       <Header />
+      <SidePanel nodes={nodes} onNodeClick={handleNodeClick} />
       <ReactFlow
         nodes={nodes}
         edges={edges}
