@@ -23,6 +23,9 @@ interface MindMapState {
   nodes: Node[]
   edges: Edge[]
   todos: Record<string, TodoNode>
+  // 非表示ノードを追跡するための新しい状態
+  hiddenNodes: Record<string, Node>
+  hiddenEdges: Record<string, Edge>
   onNodesChange: (changes: NodeChange[]) => void
   onEdgesChange: (changes: EdgeChange[]) => void
   onConnect: (connection: Connection) => void
@@ -37,7 +40,13 @@ const initialNodes: Node[] = [
   {
     id: 'root',
     type: 'todoNode',
-    data: { label: 'Main Tasks', id: 'root', completed: false, collapsed: false },
+    data: { 
+      label: 'Main Tasks', 
+      id: 'root', 
+      completed: false, 
+      collapsed: false,
+      isRoot: true
+    },
     position: { x: 0, y: 0 },
   },
 ]
@@ -63,6 +72,8 @@ export const useMindMapStore = create<MindMapState>()(
       nodes: initialNodes,
       edges: [],
       todos: initialTodos,
+      hiddenNodes: {}, // 非表示ノードを保存
+      hiddenEdges: {}, // 非表示エッジを保存
       
       onNodesChange: (changes: NodeChange[]) => {
         set({
@@ -78,7 +89,11 @@ export const useMindMapStore = create<MindMapState>()(
       
       onConnect: (connection: Connection) => {
         set({
-          edges: addEdge({ ...connection, type: 'smoothstep' }, get().edges),
+          edges: addEdge({ 
+            ...connection, 
+            type: 'straight', // smoothstep → straight
+            style: { stroke: '#888', strokeWidth: 2 }
+          }, get().edges),
         })
       },
       
@@ -107,14 +122,15 @@ export const useMindMapStore = create<MindMapState>()(
             // Calculate position relative to parent
             const parentChildren = parent.children || []
             position.x = parentNode.position.x + 250
-            position.y = parentNode.position.y + (parentChildren.length * 100)
+            position.y = parentNode.position.y + (parentChildren.length * 80) - (parentChildren.length > 0 ? 40 * parentChildren.length : 0)
             
             // Create an edge from parent to new node
             const newEdge: Edge = {
               id: `e${parentId}-${id}`,
               source: parentId,
               target: id,
-              type: 'smoothstep',
+              type: 'straight', // smoothstep → straight
+              style: { stroke: '#888', strokeWidth: 2 },
             }
             
             set({
@@ -137,6 +153,13 @@ export const useMindMapStore = create<MindMapState>()(
           }
         } else {
           // Add as a top-level node if no parent
+          // Find root node for positioning
+          const rootNode = get().nodes.find(node => node.id === 'root')
+          const rootPosition = rootNode ? rootNode.position : { x: 0, y: 0 }
+          
+          position.x = rootPosition.x - 250 // Position to the left of root
+          position.y = rootPosition.y + get().nodes.length * 80 - 100
+          
           set({
             todos: {
               ...get().todos,
@@ -148,7 +171,7 @@ export const useMindMapStore = create<MindMapState>()(
                 id,
                 type: 'todoNode',
                 data: { label: text, id, completed: false, collapsed: false },
-                position: { x: 0, y: get().nodes.length * 100 },
+                position,
               },
             ],
           })
@@ -267,65 +290,96 @@ export const useMindMapStore = create<MindMapState>()(
       toggleNodeCollapse: (id: string) => {
         const todo = get().todos[id]
         if (todo) {
+          const { nodes, edges, hiddenNodes, hiddenEdges } = get()
           const collapsed = !todo.collapsed
+          
           const updatedTodo = {
             ...todo,
             collapsed,
           }
           
-          const { nodes, edges } = get()
-          
-          // Update node data
-          const updatedNodes = nodes.map(node => 
-            node.id === id 
-              ? { ...node, data: { ...node.data, collapsed } } 
-              : node
+          // 子ノードと関連するエッジを見つける
+          const childrenIds: string[] = todo.children || []
+          const directChildrenNodes = nodes.filter(node => childrenIds.includes(node.id))
+          const directChildrenEdges = edges.filter(edge => 
+            childrenIds.includes(edge.target) || 
+            childrenIds.includes(edge.source)
           )
           
-          // Hide or show child nodes and their edges based on collapse state
-          const processChildren = (todoId: string, hide: boolean, childrenIds: string[] = []) => {
-            const currentTodo = get().todos[todoId]
-            if (!currentTodo || !currentTodo.children || currentTodo.children.length === 0) {
-              return childrenIds
-            }
+          let updatedNodes = [...nodes]
+          let updatedEdges = [...edges]
+          let updatedHiddenNodes = { ...hiddenNodes }
+          let updatedHiddenEdges = { ...hiddenEdges }
+          
+          if (collapsed) {
+            // ノードを折りたたむ場合、子ノードとエッジを非表示にして保存
+            updatedNodes = nodes.filter(node => !childrenIds.includes(node.id))
+            updatedEdges = edges.filter(edge => 
+              !childrenIds.includes(edge.target) && 
+              !childrenIds.includes(edge.source)
+            )
             
-            const directChildren = currentTodo.children
-            childrenIds.push(...directChildren)
-            
-            // Recursively process all descendants
-            directChildren.forEach(childId => {
-              processChildren(childId, hide, childrenIds)
+            // 非表示にするノードとエッジを保存
+            directChildrenNodes.forEach(node => {
+              updatedHiddenNodes[node.id] = node
             })
             
-            return childrenIds
-          }
-          
-          const childrenIds = processChildren(id, collapsed)
-          
-          // Update visibility of child nodes and edges
-          const visibleNodes = collapsed 
-            ? updatedNodes.filter(node => !childrenIds.includes(node.id))
-            : updatedNodes
+            directChildrenEdges.forEach(edge => {
+              updatedHiddenEdges[edge.id] = edge
+            })
+          } else {
+            // ノードを展開する場合、保存していた子ノードとエッジを復元
+            const restoredNodes = childrenIds
+              .filter(id => updatedHiddenNodes[id])
+              .map(id => updatedHiddenNodes[id])
             
-          const visibleEdges = collapsed
-            ? edges.filter(edge => 
-                !childrenIds.includes(edge.target) && 
-                !childrenIds.includes(edge.source))
-            : edges
+            const restoredEdges = Object.values(updatedHiddenEdges)
+              .filter(edge => 
+                childrenIds.includes(edge.target) || 
+                childrenIds.includes(edge.source)
+              )
+            
+            updatedNodes = [...nodes, ...restoredNodes]
+            updatedEdges = [...edges, ...restoredEdges]
+            
+            // 復元したノードとエッジを保存から削除
+            childrenIds.forEach(id => {
+              delete updatedHiddenNodes[id]
+            })
+            
+            Object.values(updatedHiddenEdges)
+              .filter(edge => 
+                childrenIds.includes(edge.target) || 
+                childrenIds.includes(edge.source)
+              )
+              .forEach(edge => {
+                delete updatedHiddenEdges[edge.id]
+              })
+          }
           
           set({
             todos: {
               ...get().todos,
               [id]: updatedTodo,
             },
-            nodes: visibleNodes,
-            edges: visibleEdges,
+            nodes: updatedNodes,
+            edges: updatedEdges,
+            hiddenNodes: updatedHiddenNodes,
+            hiddenEdges: updatedHiddenEdges,
           })
         }
       },
     }),
     {
       name: 'mindmap-todo-storage',
+      partialize: (state) => ({ 
+        nodes: state.nodes, 
+        edges: state.edges, 
+        todos: state.todos,
+        // 非表示のノードとエッジも永続化
+        hiddenNodes: state.hiddenNodes,
+        hiddenEdges: state.hiddenEdges,
+      }),
     }
   )
 )
