@@ -15,6 +15,7 @@ import shallow from 'zustand/shallow';
 import useStore, { RFState } from './store';
 import MindMapNode from './MindMapNode';
 import MindMapEdge from './MindMapEdge';
+import Header from '../components/layout/Header';
 
 // we need to import the React Flow styles to make it work
 import 'reactflow/dist/style.css';
@@ -106,26 +107,26 @@ function Flow() {
   );
 
   return (
-    <ReactFlow
-      nodes={nodes}
-      edges={edges}
-      onNodesChange={onNodesChange}
-      onEdgesChange={onEdgesChange}
-      onConnectStart={onConnectStart}
-      onConnectEnd={onConnectEnd}
-      nodeTypes={nodeTypes}
-      edgeTypes={edgeTypes}
-      nodeOrigin={nodeOrigin}
-      defaultEdgeOptions={defaultEdgeOptions}
-      connectionLineStyle={connectionLineStyle}
-      connectionLineType={ConnectionLineType.Straight}
-      fitView
-    >
-      <Controls showInteractive={false} />
-      <Panel position="top-left" className="header">
-        React Flow Mind Map
-      </Panel>
-    </ReactFlow>
+    <div className="relative w-full h-full">
+      <Header />
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onConnectStart={onConnectStart}
+        onConnectEnd={onConnectEnd}
+        nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
+        nodeOrigin={nodeOrigin}
+        defaultEdgeOptions={defaultEdgeOptions}
+        connectionLineStyle={connectionLineStyle}
+        connectionLineType={ConnectionLineType.Straight}
+        fitView
+      >
+        <Controls showInteractive={false} />
+      </ReactFlow>
+    </div>
   );
 }
 
