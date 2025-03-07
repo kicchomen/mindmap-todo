@@ -16,7 +16,7 @@ export default function Header({ darkMode, toggleDarkMode }: HeaderProps) {
 
   return (
     <header className={cn(
-      "border-b p-4 flex items-center justify-between",
+      "border-b py-2 px-4 flex items-center justify-between h-16", // 高さを固定
       "bg-background text-foreground"
     )}>
       <div className="flex items-center gap-2">
