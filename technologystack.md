@@ -13,6 +13,8 @@
 - Material Icons
 - React Flow
 
+※ lucide-react は使用禁止。Material Icons を使うこと。
+
 ## バックエンド
 なし。
 データの管理が必要であれば、localStorage や Google Drive 連携などを使うこと。
