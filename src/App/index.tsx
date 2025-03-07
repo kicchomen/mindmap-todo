@@ -9,6 +9,8 @@ import ReactFlow, {
   useStoreApi,
   Controls,
   Panel,
+  Background,
+  BackgroundVariant
 } from 'reactflow';
 import shallow from 'zustand/shallow';
 
@@ -136,6 +138,7 @@ function Flow() {
         fitView
       >
         <Controls showInteractive={false} />
+        <Background variant={BackgroundVariant.Dots} gap={16} size={2} />
       </ReactFlow>
     </div>
   );
