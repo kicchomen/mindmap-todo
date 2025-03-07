@@ -75,9 +75,47 @@ export const useMindMapStore = create<MindMapState>()(
       hiddenEdges: [],
       
       onNodesChange: (changes: NodeChange[]) => {
+        // ドラッグによる位置変更を処理
+        const dragChanges = changes.filter(change => 
+          change.type === 'position' && 'position' in change && change.position
+        );
+
+        // 複数のノードが同時に移動する可能性があるため、それぞれの変更を処理
+        dragChanges.forEach(change => {
+          const { id, position } = change as { id: string, position: { x: number, y: number } };
+          const draggedNode = get().nodes.find(node => node.id === id);
+          const draggedTodo = get().todos[id];
+
+          if (draggedNode && draggedTodo && position) {
+            const dx = position.x - draggedNode.position.x;
+            const dy = position.y - draggedNode.position.y;
+
+            // 全ての子孫ノードを再帰的に移動
+            const moveDescendants = (todoId: string, deltaX: number, deltaY: number) => {
+              const todo = get().todos[todoId];
+              if (!todo?.children?.length) return;
+
+              todo.children.forEach(childId => {
+                const childNode = get().nodes.find(n => n.id === childId);
+                if (childNode) {
+                  // 子ノードの位置を更新
+                  childNode.position.x += deltaX;
+                  childNode.position.y += deltaY;
+                }
+                // 再帰的に子ノードの子も移動
+                moveDescendants(childId, deltaX, deltaY);
+              });
+            };
+
+            // ドラッグされたノードの子孫を移動
+            moveDescendants(id, dx, dy);
+          }
+        });
+
+        // 通常の変更を適用
         set({
           nodes: applyNodeChanges(changes, get().nodes),
-        })
+        });
       },
       
       onEdgesChange: (changes: EdgeChange[]) => {
