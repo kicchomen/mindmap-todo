@@ -37,7 +37,13 @@ const initialNodes: Node[] = [
   {
     id: 'root',
     type: 'todoNode',
-    data: { label: 'Main Tasks', id: 'root', completed: false, collapsed: false },
+    data: { 
+      label: 'Main Tasks', 
+      id: 'root', 
+      completed: false, 
+      collapsed: false,
+      isRoot: true
+    },
     position: { x: 0, y: 0 },
   },
 ]
@@ -78,7 +84,11 @@ export const useMindMapStore = create<MindMapState>()(
       
       onConnect: (connection: Connection) => {
         set({
-          edges: addEdge({ ...connection, type: 'smoothstep' }, get().edges),
+          edges: addEdge({ 
+            ...connection, 
+            type: 'smoothstep',
+            style: { stroke: '#F59E0B', strokeWidth: 2 }
+          }, get().edges),
         })
       },
       
@@ -107,7 +117,7 @@ export const useMindMapStore = create<MindMapState>()(
             // Calculate position relative to parent
             const parentChildren = parent.children || []
             position.x = parentNode.position.x + 250
-            position.y = parentNode.position.y + (parentChildren.length * 100)
+            position.y = parentNode.position.y + (parentChildren.length * 80) - (parentChildren.length > 0 ? 40 * parentChildren.length : 0)
             
             // Create an edge from parent to new node
             const newEdge: Edge = {
@@ -115,6 +125,8 @@ export const useMindMapStore = create<MindMapState>()(
               source: parentId,
               target: id,
               type: 'smoothstep',
+              style: { stroke: '#F59E0B', strokeWidth: 2 },
+              animated: true
             }
             
             set({
@@ -137,6 +149,13 @@ export const useMindMapStore = create<MindMapState>()(
           }
         } else {
           // Add as a top-level node if no parent
+          // Find root node for positioning
+          const rootNode = get().nodes.find(node => node.id === 'root')
+          const rootPosition = rootNode ? rootNode.position : { x: 0, y: 0 }
+          
+          position.x = rootPosition.x - 250 // Position to the left of root
+          position.y = rootPosition.y + get().nodes.length * 80 - 100
+          
           set({
             todos: {
               ...get().todos,
@@ -148,7 +167,7 @@ export const useMindMapStore = create<MindMapState>()(
                 id,
                 type: 'todoNode',
                 data: { label: text, id, completed: false, collapsed: false },
-                position: { x: 0, y: get().nodes.length * 100 },
+                position,
               },
             ],
           })
