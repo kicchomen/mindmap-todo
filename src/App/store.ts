@@ -13,6 +13,7 @@ import create from 'zustand';
 import { nanoid } from 'nanoid/non-secure';
 
 import { NodeData } from './MindMapNode';
+import { loadMindMapFromStorage, saveMindMapToStorage } from '../utils/storage';
 
 export type RFState = {
   nodes: Node<NodeData>[];
@@ -22,29 +23,54 @@ export type RFState = {
   updateNodeLabel: (nodeId: string, label: string) => void;
   addChildNode: (parentNode: Node, position: XYPosition) => void;
   toggleNodeCollapse: (nodeId: string) => void;
+  loadFromStorage: () => void;
+  saveToStorage: () => void;
+  initialized: boolean;
+  setInitialized: (value: boolean) => void;
 };
 
+// デフォルトのノードとエッジ
+const defaultNodes: Node<NodeData>[] = [
+  {
+    id: 'root',
+    type: 'mindmap',
+    data: { label: 'React Flow Mind Map', collapsed: false },
+    position: { x: 0, y: 0 },
+    dragHandle: '.dragHandle',
+  },
+];
+const defaultEdges: Edge[] = [];
+
 const useStore = create<RFState>((set, get) => ({
-  nodes: [
-    {
-      id: 'root',
-      type: 'mindmap',
-      data: { label: 'React Flow Mind Map', collapsed: false },
-      position: { x: 0, y: 0 },
-      dragHandle: '.dragHandle',
-    },
-  ],
-  edges: [],
+  // 初期化フラグ
+  initialized: false,
+  setInitialized: (value: boolean) => set({ initialized: value }),
+
+  // デフォルト値で初期化
+  nodes: [...defaultNodes],
+  edges: [...defaultEdges],
+
+  // ノード変更
   onNodesChange: (changes: NodeChange[]) => {
     set({
       nodes: applyNodeChanges(changes, get().nodes),
     });
+    
+    // 変更があった時に自動保存
+    setTimeout(() => get().saveToStorage(), 0);
   },
+
+  // エッジ変更
   onEdgesChange: (changes: EdgeChange[]) => {
     set({
       edges: applyEdgeChanges(changes, get().edges),
     });
+    
+    // 変更があった時に自動保存
+    setTimeout(() => get().saveToStorage(), 0);
   },
+
+  // ノードラベル更新
   updateNodeLabel: (nodeId: string, label: string) => {
     set({
       nodes: get().nodes.map((node) => {
@@ -56,7 +82,12 @@ const useStore = create<RFState>((set, get) => ({
         return node;
       }),
     });
+    
+    // 変更があった時に自動保存
+    setTimeout(() => get().saveToStorage(), 0);
   },
+
+  // 子ノード追加
   addChildNode: (parentNode: Node, position: XYPosition) => {
     const newNode = {
       id: nanoid(),
@@ -77,7 +108,12 @@ const useStore = create<RFState>((set, get) => ({
       nodes: [...get().nodes, newNode],
       edges: [...get().edges, newEdge],
     });
+    
+    // 変更があった時に自動保存
+    setTimeout(() => get().saveToStorage(), 0);
   },
+
+  // ノードの折りたたみトグル
   toggleNodeCollapse: (nodeId: string) => {
     // ノードの展開/折りたたみ状態を切り替える
     const nodes = get().nodes.map((node) => {
@@ -140,7 +176,50 @@ const useStore = create<RFState>((set, get) => ({
       nodes: updatedNodes,
       edges: updatedEdges
     });
+    
+    // 変更があった時に自動保存
+    setTimeout(() => get().saveToStorage(), 0);
   },
+
+  // ストレージから読み込み
+  loadFromStorage: () => {
+    try {
+      const data = loadMindMapFromStorage();
+      
+      if (data) {
+        set({
+          nodes: data.nodes,
+          edges: data.edges,
+          initialized: true
+        });
+        console.log('ストレージからマインドマップを読み込みました');
+      } else {
+        set({
+          nodes: [...defaultNodes],
+          edges: [...defaultEdges],
+          initialized: true
+        });
+        console.log('ストレージにデータがないため、デフォルト状態で初期化しました');
+      }
+    } catch (error) {
+      console.error('ストレージからの読み込み中にエラーが発生しました:', error);
+      set({
+        nodes: [...defaultNodes],
+        edges: [...defaultEdges],
+        initialized: true
+      });
+    }
+  },
+
+  // ストレージに保存
+  saveToStorage: () => {
+    const { nodes, edges } = get();
+    
+    // 初期化済みの場合のみ保存を実行
+    if (get().initialized) {
+      saveMindMapToStorage(nodes, edges);
+    }
+  }
 }));
 
 export default useStore;
