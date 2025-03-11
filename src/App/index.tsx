@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState, useEffect } from 'react';
 import ReactFlow, {
   ConnectionLineType,
   NodeOrigin,
@@ -30,6 +30,9 @@ const selector = (state: RFState) => ({
   onNodesChange: state.onNodesChange,
   onEdgesChange: state.onEdgesChange,
   addChildNode: state.addChildNode,
+  loadFromStorage: state.loadFromStorage,
+  initialized: state.initialized,
+  setInitialized: state.setInitialized,
 });
 
 const nodeTypes = {
@@ -47,14 +50,34 @@ const defaultEdgeOptions = { style: connectionLineStyle, type: 'mindmap' };
 
 function Flow() {
   const store = useStoreApi();
-  const { nodes, edges, onNodesChange, onEdgesChange, addChildNode } = useStore(
-    selector,
-    shallow
-  );
+  const { 
+    nodes, 
+    edges, 
+    onNodesChange, 
+    onEdgesChange, 
+    addChildNode,
+    loadFromStorage,
+    initialized,
+    setInitialized
+  } = useStore(selector, shallow);
+  
   const [connectingNodeId, setConnectingNodeId] = useState<string | null>(null);
   const connectingNodeRef = useRef<string | null>(null);
   const reactFlowInstance = useReactFlow();
   const [searchHighlightedNodes, setSearchHighlightedNodes] = useState<string[]>([]);
+  
+  // サイドパネルの表示モードを管理
+  const [sidePanelMode, setSidePanelMode] = useState<string>('tree');
+  // サイドパネルの表示/非表示
+  const [showSidePanel, setShowSidePanel] = useState<boolean>(true);
+
+  // アプリが初期化されるときにストレージから読み込む
+  useEffect(() => {
+    if (!initialized) {
+      console.log('マインドマップデータをストレージから読み込みます');
+      loadFromStorage();
+    }
+  }, [initialized, loadFromStorage]);
 
   const getChildNodePosition = (event: MouseEvent, parentNode?: Node) => {
     const { domNode } = store.getState();
@@ -144,9 +167,25 @@ function Flow() {
     }
   };
 
+  // ナビゲーションアイテムがクリックされたときの処理
+  const handleNavigationItemClick = (item: string) => {
+    // treeとstorageの場合はサイドパネルモードを設定し、パネルを表示
+    if (item === 'tree' || item === 'storage') {
+      setSidePanelMode(item);
+      setShowSidePanel(true);
+    } else {
+      // それ以外のアイテム（account, projectsなど）はサイドパネルを非表示に
+      // ※必要に応じて他のUIコンポーネントを表示する処理を追加
+      setShowSidePanel(false);
+    }
+  };
+
   return (
     <div className="flex h-screen">
-      <NavigationBar />
+      <NavigationBar 
+        activeItem={sidePanelMode} 
+        onItemClick={handleNavigationItemClick} 
+      />
       <div className="flex-1 ml-16">
         <ReactFlow
           nodes={nodes.map(node => ({
@@ -171,7 +210,7 @@ function Flow() {
           maxZoom={1.5}
         >
           <Header onSearch={handleSearch} />
-          <SidePanel />
+          {showSidePanel && <SidePanel mode={sidePanelMode} />}
           <Controls showInteractive={false} />
           <Background variant={BackgroundVariant.Dots} gap={16} size={2} color="#F6AD55" />
         </ReactFlow>
