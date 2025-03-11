@@ -1,7 +1,9 @@
-import { useLayoutEffect, useEffect, useRef } from 'react';
+import { useLayoutEffect, useEffect, useRef, useState } from 'react';
 import { Handle, NodeProps, Position } from 'reactflow';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 import useStore from '../store';
 
@@ -17,9 +19,17 @@ function MindMapNode({ id, data }: NodeProps<NodeData>) {
   const updateNodeLabel = useStore((state) => state.updateNodeLabel);
   const toggleNodeCollapse = useStore((state) => state.toggleNodeCollapse);
   const nodes = useStore((state) => state.nodes);
+  const selectedNodeId = useStore((state) => state.selectedNodeId);
+  const selectNode = useStore((state) => state.selectNode);
+  const deleteNode = useStore((state) => state.deleteNode);
+  const addChildNodeDirectly = useStore((state) => state.addChildNodeDirectly);
   
   // 子ノードを持っているか確認
   const hasChildren = nodes.some(node => node.parentNode === id);
+  // 現在のノードが選択されているか
+  const isSelected = selectedNodeId === id;
+  // ルートノードかどうかを確認
+  const isRootNode = id === 'root';
 
   useEffect(() => {
     setTimeout(() => {
@@ -59,9 +69,42 @@ function MindMapNode({ id, data }: NodeProps<NodeData>) {
     e.stopPropagation();
     toggleNodeCollapse(id);
   };
+  
+  const handleNodeClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    // すでに選択されている場合は選択解除
+    if (isSelected) {
+      selectNode(null);
+    } else {
+      // 他のノードを選択
+      selectNode(id);
+    }
+  };
+  
+  const handleDeleteNode = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    deleteNode(id);
+  };
+  
+  const handleAddChildNode = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    addChildNodeDirectly(id);
+  };
+  
+  const handleInputClick = (e: React.MouseEvent) => {
+    // 編集モードの際にイベントが親に伝播しないようにする
+    e.stopPropagation();
+  };
+  
+  // 選択されている場合のスタイルクラス
+  const selectedClass = isSelected ? "node-selected" : "";
 
   return (
-    <>
+    <div 
+      className={`node-container ${selectedClass}`} 
+      onClick={handleNodeClick}
+    >
       <div className="inputWrapper">
         <div className="dragHandle">
           <DragIcon />
@@ -71,6 +114,7 @@ function MindMapNode({ id, data }: NodeProps<NodeData>) {
           onChange={(evt) => updateNodeLabel(id, evt.target.value)}
           className="input"
           ref={inputRef}
+          onClick={handleInputClick}
         />
         {hasChildren && (
           <div className="collapseButton" onClick={handleToggleCollapse}>
@@ -81,10 +125,34 @@ function MindMapNode({ id, data }: NodeProps<NodeData>) {
           </div>
         )}
       </div>
+      
+      {/* 選択状態の時に表示するアクションメニュー */}
+      {isSelected && (
+        <div className="action-menu">
+          <button 
+            className="action-button add-button"
+            onClick={handleAddChildNode}
+            title="Add child node"
+          >
+            <AddIcon fontSize="small" />
+          </button>
+          
+          {/* ルートノードは削除できないようにする */}
+          {!isRootNode && (
+            <button 
+              className="action-button delete-button"
+              onClick={handleDeleteNode}
+              title="Delete node"
+            >
+              <DeleteIcon fontSize="small" />
+            </button>
+          )}
+        </div>
+      )}
 
       <Handle type="target" position={Position.Top} />
       <Handle type="source" position={Position.Top} />
-    </>
+    </div>
   );
 }
 
