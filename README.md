@@ -9,8 +9,9 @@ A modern and intuitive mind map-based TODO management application that helps vis
 - Mark tasks as complete/incomplete
 - Organize tasks hierarchically
 - Collapse/expand branches to focus on specific parts of your task structure
+- **Automatic saving of changes to localStorage**
+- **Export/import data functionality**
 - Dark/Light mode support
-- Local storage persistence
 - Modern, clean UI design
 
 ## Technology Stack
@@ -27,6 +28,16 @@ A modern and intuitive mind map-based TODO management application that helps vis
   - React Flow (for mind map visualization)
   - Vite (for build and development)
   - Zustand (for state management)
+
+## Data Management
+
+The application automatically saves all changes to localStorage. This ensures that your mind map state is preserved between sessions. You can:
+
+- **Auto-save**: All changes are automatically saved as you make them
+- **Export data**: Export your entire mind map data as a JSON file for backup
+- **Reset data**: Clear all data and start fresh if needed
+
+This implementation is designed with future cloud storage support in mind, making it easy to integrate with services like Google Drive or iCloud in future versions.
 
 ## Running the Application
 
@@ -56,7 +67,8 @@ npm run build
 
 ## Future Enhancements
 
-- Notion integration for cloud storage and synchronization
+- Google Drive, iCloud, and GitHub integration for cloud storage and synchronization
+- Import functionality for restoring from exported data
 - AI-assisted task organization suggestions
 - Enhanced collaboration features
 - Mobile-optimized view
