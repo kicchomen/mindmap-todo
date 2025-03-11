@@ -10,6 +10,7 @@ import {
   applyEdgeChanges
 } from 'reactflow'
 import { persist } from 'zustand/middleware'
+import { debouncedSave } from './storage/storageStore'
 
 export interface TodoNode {
   id: string
@@ -65,6 +66,17 @@ const generateId = () => {
   return Math.random().toString(36).substring(2, 9)
 }
 
+// Helper function to trigger save after state updates
+const withAutoSave = <T extends object>(newState: T): T => {
+  // Schedule a debounced save
+  setTimeout(() => {
+    const { nodes, edges, todos } = useMindMapStore.getState();
+    debouncedSave({ nodes, edges, todos });
+  }, 0);
+  
+  return newState;
+};
+
 export const useMindMapStore = create<MindMapState>()(
   persist(
     (set, get) => ({
@@ -112,20 +124,20 @@ export const useMindMapStore = create<MindMapState>()(
           }
         });
 
-        // 通常の変更を適用
-        set({
+        // 通常の変更を適用（自動保存も実行）
+        set(withAutoSave({
           nodes: applyNodeChanges(changes, get().nodes),
-        });
+        }));
       },
       
       onEdgesChange: (changes: EdgeChange[]) => {
-        set({
+        set(withAutoSave({
           edges: applyEdgeChanges(changes, get().edges),
-        })
+        }));
       },
       
       onConnect: (connection: Connection) => {
-        set({
+        set(withAutoSave({
           edges: addEdge({ 
             ...connection, 
             type: 'straight',
@@ -135,7 +147,7 @@ export const useMindMapStore = create<MindMapState>()(
               strokeDasharray: '0'
             }
           }, get().edges),
-        })
+        }));
       },
       
       addTodo: (parentId: string | null, text: string) => {
@@ -179,7 +191,7 @@ export const useMindMapStore = create<MindMapState>()(
               animated: false
             }
             
-            set({
+            set(withAutoSave({
               todos: {
                 ...get().todos,
                 [id]: newTodo,
@@ -195,7 +207,7 @@ export const useMindMapStore = create<MindMapState>()(
                 },
               ],
               edges: [...get().edges, newEdge],
-            })
+            }))
           }
         } else {
           // Add as a top-level node if no parent
@@ -206,7 +218,7 @@ export const useMindMapStore = create<MindMapState>()(
           position.x = rootPosition.x - 250 // Position to the left of root
           position.y = rootPosition.y + get().nodes.length * 80 - 100
           
-          set({
+          set(withAutoSave({
             todos: {
               ...get().todos,
               [id]: newTodo,
@@ -220,7 +232,7 @@ export const useMindMapStore = create<MindMapState>()(
                 position,
               },
             ],
-          })
+          }))
         }
       },
       
@@ -232,7 +244,7 @@ export const useMindMapStore = create<MindMapState>()(
             text,
           }
           
-          set({
+          set(withAutoSave({
             todos: {
               ...get().todos,
               [id]: updatedTodo,
@@ -242,7 +254,7 @@ export const useMindMapStore = create<MindMapState>()(
                 ? { ...node, data: { ...node.data, label: text } } 
                 : node
             ),
-          })
+          }))
         }
       },
       
@@ -255,7 +267,7 @@ export const useMindMapStore = create<MindMapState>()(
             completed,
           }
           
-          set({
+          set(withAutoSave({
             todos: {
               ...get().todos,
               [id]: updatedTodo,
@@ -265,7 +277,7 @@ export const useMindMapStore = create<MindMapState>()(
                 ? { ...node, data: { ...node.data, completed } } 
                 : node
             ),
-          })
+          }))
         }
       },
       
@@ -321,7 +333,7 @@ export const useMindMapStore = create<MindMapState>()(
         }
         
         // Remove the node and its related edges
-        set({
+        set(withAutoSave({
           todos: newTodos,
           nodes: nodes.filter(node => node.id !== id && 
                                !todo.children?.includes(node.id)),
@@ -338,7 +350,7 @@ export const useMindMapStore = create<MindMapState>()(
             !todo.children?.includes(edge.source) && 
             !todo.children?.includes(edge.target)
           ),
-        })
+        }))
       },
       
       toggleNodeCollapse: (id: string) => {
@@ -386,7 +398,7 @@ export const useMindMapStore = create<MindMapState>()(
               childrenIds.includes(edge.target) || childrenIds.includes(edge.source)
             )
             
-            set({
+            set(withAutoSave({
               todos: {
                 ...get().todos,
                 [id]: updatedTodo,
@@ -397,7 +409,7 @@ export const useMindMapStore = create<MindMapState>()(
               ),
               hiddenNodes: [...hiddenNodes, ...nodesToHide],
               hiddenEdges: [...hiddenEdges, ...edgesToHide],
-            })
+            }))
           } else {
             // ノードを開く場合: 隠れたノードのリストから対象の子ノードを復元
             const nodesToShow = hiddenNodes.filter(node => childrenIds.includes(node.id))
@@ -405,7 +417,7 @@ export const useMindMapStore = create<MindMapState>()(
               (childrenIds.includes(edge.source) || childrenIds.includes(edge.target))
             )
             
-            set({
+            set(withAutoSave({
               todos: {
                 ...get().todos,
                 [id]: updatedTodo,
@@ -416,7 +428,7 @@ export const useMindMapStore = create<MindMapState>()(
               hiddenEdges: hiddenEdges.filter(edge => 
                 !(childrenIds.includes(edge.source) || childrenIds.includes(edge.target))
               ),
-            })
+            }))
           }
         }
       },
