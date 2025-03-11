@@ -1,123 +1,95 @@
-/**
- * Storage utility functions for data persistence
- * 
- * This module provides an abstracted interface for data storage operations,
- * currently implemented with localStorage but designed to be extended to other
- * storage solutions (iCloud, Google Drive, GitHub, etc.) in the future.
- */
+import { Edge, Node } from 'reactflow';
+import { NodeData } from '../App/MindMapNode';
 
-// Keys used for localStorage
-export const STORAGE_KEYS = {
-  MINDMAP_DATA: 'mindmap-todo-data',
-  LAST_MODIFIED: 'mindmap-todo-last-modified',
+// LocalStorageのキー
+const STORAGE_KEY = 'mindmap-todo-data';
+
+// 保存するデータの型定義
+export interface MindMapStorageData {
+  nodes: Node<NodeData>[];
+  edges: Edge[];
+  lastSaved: number; // タイムスタンプ
+}
+
+/**
+ * マインドマップデータをlocalStorageに保存する
+ */
+export const saveMindMapToStorage = (nodes: Node<NodeData>[], edges: Edge[]): void => {
+  try {
+    const data: MindMapStorageData = {
+      nodes,
+      edges,
+      lastSaved: Date.now()
+    };
+    
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    console.log('マインドマップをlocalStorageに保存しました', new Date().toLocaleTimeString());
+  } catch (error) {
+    console.error('マインドマップの保存に失敗しました:', error);
+  }
 };
 
 /**
- * Storage interface defining the contract for all storage implementations
+ * localStorageからマインドマップデータを読み込む
+ */
+export const loadMindMapFromStorage = (): MindMapStorageData | null => {
+  try {
+    const storedData = localStorage.getItem(STORAGE_KEY);
+    
+    if (!storedData) {
+      return null;
+    }
+    
+    const parsedData: MindMapStorageData = JSON.parse(storedData);
+    console.log('マインドマップをlocalStorageから読み込みました', new Date(parsedData.lastSaved).toLocaleString());
+    return parsedData;
+  } catch (error) {
+    console.error('マインドマップの読み込みに失敗しました:', error);
+    return null;
+  }
+};
+
+/**
+ * localStorageからマインドマップデータを削除する
+ */
+export const clearMindMapFromStorage = (): void => {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+    console.log('マインドマップのストレージデータをクリアしました');
+  } catch (error) {
+    console.error('マインドマップデータの削除に失敗しました:', error);
+  }
+};
+
+/**
+ * ストレージプロバイダーのインターフェース
+ * 将来的なクラウドストレージ連携を見据えたインターフェース定義
  */
 export interface StorageProvider {
-  // Save data to storage
-  save: <T>(key: string, data: T) => Promise<void>;
-  
-  // Load data from storage
-  load: <T>(key: string) => Promise<T | null>;
-  
-  // Check if data exists in storage
-  exists: (key: string) => Promise<boolean>;
-  
-  // Delete data from storage
-  delete: (key: string) => Promise<void>;
+  save(data: MindMapStorageData): Promise<void>;
+  load(): Promise<MindMapStorageData | null>;
+  clear(): Promise<void>;
 }
 
 /**
- * localStorage implementation of the StorageProvider interface
+ * LocalStorage プロバイダーの実装
  */
 export class LocalStorageProvider implements StorageProvider {
-  /**
-   * Save data to localStorage
-   * @param key - Storage key
-   * @param data - Data to store
-   */
-  async save<T>(key: string, data: T): Promise<void> {
-    try {
-      const serializedData = JSON.stringify(data);
-      localStorage.setItem(key, serializedData);
-      // Update last modified timestamp
-      localStorage.setItem(STORAGE_KEYS.LAST_MODIFIED, Date.now().toString());
-    } catch (error) {
-      console.error('Error saving to localStorage:', error);
-      throw new Error('Failed to save data to localStorage');
-    }
+  async save(data: MindMapStorageData): Promise<void> {
+    saveMindMapToStorage(data.nodes, data.edges);
   }
 
-  /**
-   * Load data from localStorage
-   * @param key - Storage key
-   * @returns The stored data or null if not found
-   */
-  async load<T>(key: string): Promise<T | null> {
-    try {
-      const data = localStorage.getItem(key);
-      if (!data) return null;
-      return JSON.parse(data) as T;
-    } catch (error) {
-      console.error('Error loading from localStorage:', error);
-      throw new Error('Failed to load data from localStorage');
-    }
+  async load(): Promise<MindMapStorageData | null> {
+    return loadMindMapFromStorage();
   }
 
-  /**
-   * Check if data exists in localStorage
-   * @param key - Storage key
-   * @returns True if data exists, false otherwise
-   */
-  async exists(key: string): Promise<boolean> {
-    return localStorage.getItem(key) !== null;
-  }
-
-  /**
-   * Delete data from localStorage
-   * @param key - Storage key
-   */
-  async delete(key: string): Promise<void> {
-    localStorage.removeItem(key);
+  async clear(): Promise<void> {
+    clearMindMapFromStorage();
   }
 }
 
-// Default storage provider instance (localStorage)
-const storageProvider = new LocalStorageProvider();
-
-/**
- * Save mindmap data to storage
- * @param data - Mindmap data to store
- */
-export const saveMindMapData = async <T>(data: T): Promise<void> => {
-  await storageProvider.save(STORAGE_KEYS.MINDMAP_DATA, data);
+// デフォルトのストレージプロバイダーを返す関数
+// 将来的にはユーザー設定などに基づいて異なるプロバイダーを返すことができる
+export const getStorageProvider = (): StorageProvider => {
+  return new LocalStorageProvider();
 };
-
-/**
- * Load mindmap data from storage
- * @returns The stored mindmap data or null if not found
- */
-export const loadMindMapData = async <T>(): Promise<T | null> => {
-  return await storageProvider.load<T>(STORAGE_KEYS.MINDMAP_DATA);
-};
-
-/**
- * Check if mindmap data exists in storage
- * @returns True if data exists, false otherwise
- */
-export const hasMindMapData = async (): Promise<boolean> => {
-  return await storageProvider.exists(STORAGE_KEYS.MINDMAP_DATA);
-};
-
-/**
- * Get the last modified timestamp for mindmap data
- * @returns Timestamp or null if not available
- */
-export const getLastModifiedTime = async (): Promise<number | null> => {
-  const timestamp = await storageProvider.load<string>(STORAGE_KEYS.LAST_MODIFIED);
-  return timestamp ? parseInt(timestamp, 10) : null;
-};
-
-export default storageProvider;
