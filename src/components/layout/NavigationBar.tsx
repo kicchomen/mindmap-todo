@@ -2,20 +2,23 @@ import React from 'react';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import FolderIcon from '@mui/icons-material/Folder';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
+import StorageIcon from '@mui/icons-material/Storage';
 import Tooltip from '@mui/material/Tooltip';
 
 interface NavigationBarProps {
   className?: string;
+  activeItem: string;
+  onItemClick: (item: string) => void;
 }
 
-const NavigationBar: React.FC<NavigationBarProps> = ({ className }) => {
-  // ナビゲーションアイテムのアクティブ状態を管理
-  const [activeItem, setActiveItem] = React.useState<string>('tree');
-
+const NavigationBar: React.FC<NavigationBarProps> = ({ 
+  className, 
+  activeItem = 'tree',
+  onItemClick
+}) => {
   // ナビゲーションアイテムをクリックした時の処理
   const handleItemClick = (item: string) => {
-    setActiveItem(item);
-    // 将来的には、ここでページ遷移や状態変更などの処理を追加
+    onItemClick(item);
   };
 
   return (
@@ -49,6 +52,15 @@ const NavigationBar: React.FC<NavigationBarProps> = ({ className }) => {
             onClick={() => handleItemClick('tree')}
           >
             <AccountTreeIcon sx={{ fontSize: 28 }} />
+          </button>
+        </Tooltip>
+        
+        <Tooltip title="ストレージ管理" placement="right" arrow>
+          <button 
+            className={`p-2 rounded-full transition-all duration-200 ${activeItem === 'storage' ? 'bg-orange-100 text-orange-600' : 'text-gray-600 hover:bg-gray-100'}`}
+            onClick={() => handleItemClick('storage')}
+          >
+            <StorageIcon sx={{ fontSize: 28 }} />
           </button>
         </Tooltip>
       </div>
