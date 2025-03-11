@@ -173,7 +173,7 @@ function Flow() {
           <Header onSearch={handleSearch} />
           <SidePanel />
           <Controls showInteractive={false} />
-          <Background variant={BackgroundVariant.Dots} gap={16} size={2} />
+          <Background variant={BackgroundVariant.Dots} gap={16} size={2} color="#F6AD55" />
         </ReactFlow>
       </div>
     </div>
