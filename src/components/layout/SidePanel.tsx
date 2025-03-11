@@ -2,8 +2,12 @@ import React from 'react';
 import useStore from '../../App/store';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import SaveIcon from '@mui/icons-material/Save';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { NodeData } from '../../App/MindMapNode';
 import { useReactFlow } from 'reactflow';
+import { clearMindMapFromStorage } from '../../utils/storage';
 
 interface SidePanelProps {
   className?: string;
@@ -74,6 +78,60 @@ const TreeNode: React.FC<TreeNodeProps> = ({ node, nodes, level, reactFlowInstan
   );
 };
 
+const StorageSection: React.FC = () => {
+  const saveToStorage = useStore(state => state.saveToStorage);
+  const loadFromStorage = useStore(state => state.loadFromStorage);
+  
+  const handleSave = () => {
+    saveToStorage();
+    alert('マインドマップをlocalStorageに手動保存しました');
+  };
+  
+  const handleLoad = () => {
+    loadFromStorage();
+    alert('マインドマップをlocalStorageから再読み込みしました');
+  };
+  
+  const handleClear = () => {
+    if (window.confirm('マインドマップのデータをlocalStorageから削除しますか？\n(この操作は元に戻せません)')) {
+      clearMindMapFromStorage();
+      alert('マインドマップのデータをlocalStorageから削除しました。\n再読み込みするとデフォルト状態に戻ります。');
+    }
+  };
+  
+  return (
+    <div className="mt-4 pt-4 border-t border-gray-200">
+      <h2 className="text-sm font-semibold text-gray-700 mb-2">データ保存</h2>
+      <div className="flex flex-col space-y-2">
+        <button
+          onClick={handleSave}
+          className="flex items-center text-xs px-2 py-1 rounded bg-blue-50 hover:bg-blue-100 text-blue-600"
+        >
+          <SaveIcon fontSize="small" className="mr-1" />
+          手動保存
+        </button>
+        <button
+          onClick={handleLoad}
+          className="flex items-center text-xs px-2 py-1 rounded bg-green-50 hover:bg-green-100 text-green-600"
+        >
+          <RefreshIcon fontSize="small" className="mr-1" />
+          再読み込み
+        </button>
+        <button
+          onClick={handleClear}
+          className="flex items-center text-xs px-2 py-1 rounded bg-red-50 hover:bg-red-100 text-red-600"
+        >
+          <DeleteIcon fontSize="small" className="mr-1" />
+          データクリア
+        </button>
+        <div className="text-xs text-gray-500 mt-1">
+          ※編集時は自動保存されています
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const SidePanel: React.FC<SidePanelProps> = ({ className }) => {
   // storeからノードを取得
   const nodes = useStore(state => state.nodes);
@@ -98,6 +156,9 @@ const SidePanel: React.FC<SidePanelProps> = ({ className }) => {
           />
         ))}
       </div>
+      
+      {/* ストレージ管理セクション */}
+      <StorageSection />
     </div>
   );
 };
