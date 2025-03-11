@@ -5,7 +5,6 @@ import SaveStatus from './components/SaveStatus'
 import { ThemeProvider } from './components/theme-provider'
 import ReactFlowProvider from './components/ReactFlowProvider'
 import { useStorageStore } from './lib/storage/storageStore'
-import { useMindMapStore } from './lib/store'
 
 function App() {
   const [darkMode, setDarkMode] = useState(false)
@@ -15,21 +14,9 @@ function App() {
   useEffect(() => {
     const initializeFromStorage = async () => {
       // This is a backup loading mechanism in case Zustand's persist fails
-      // It shouldn't be necessary in most cases, but provides an extra layer of reliability
       try {
-        const savedData = await loadData<{
-          nodes: any[],
-          edges: any[],
-          todos: Record<string, any>
-        }>()
-        
-        if (savedData && 
-            Object.keys(savedData.todos).length > 0 && 
-            savedData.nodes.length > 0) {
-          console.log('📝 Loaded data from storage')
-          // Not using this data directly as Zustand's persist should handle it
-          // This is just for verification and backup purposes
-        }
+        await loadData()
+        // Data should be loaded automatically via Zustand's persist middleware
       } catch (error) {
         console.error('Failed to initialize from storage:', error)
       }
