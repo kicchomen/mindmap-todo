@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState, useEffect } from 'react';
 import ReactFlow, {
   ConnectionLineType,
   NodeOrigin,
@@ -30,6 +30,9 @@ const selector = (state: RFState) => ({
   onNodesChange: state.onNodesChange,
   onEdgesChange: state.onEdgesChange,
   addChildNode: state.addChildNode,
+  loadFromStorage: state.loadFromStorage,
+  initialized: state.initialized,
+  setInitialized: state.setInitialized,
 });
 
 const nodeTypes = {
@@ -47,14 +50,29 @@ const defaultEdgeOptions = { style: connectionLineStyle, type: 'mindmap' };
 
 function Flow() {
   const store = useStoreApi();
-  const { nodes, edges, onNodesChange, onEdgesChange, addChildNode } = useStore(
-    selector,
-    shallow
-  );
+  const { 
+    nodes, 
+    edges, 
+    onNodesChange, 
+    onEdgesChange, 
+    addChildNode,
+    loadFromStorage,
+    initialized,
+    setInitialized
+  } = useStore(selector, shallow);
+  
   const [connectingNodeId, setConnectingNodeId] = useState<string | null>(null);
   const connectingNodeRef = useRef<string | null>(null);
   const reactFlowInstance = useReactFlow();
   const [searchHighlightedNodes, setSearchHighlightedNodes] = useState<string[]>([]);
+
+  // アプリが初期化されるときにストレージから読み込む
+  useEffect(() => {
+    if (!initialized) {
+      console.log('マインドマップデータをストレージから読み込みます');
+      loadFromStorage();
+    }
+  }, [initialized, loadFromStorage]);
 
   const getChildNodePosition = (event: MouseEvent, parentNode?: Node) => {
     const { domNode } = store.getState();
