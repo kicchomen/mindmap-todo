@@ -33,6 +33,8 @@ const selector = (state: RFState) => ({
   loadFromStorage: state.loadFromStorage,
   initialized: state.initialized,
   setInitialized: state.setInitialized,
+  selectNode: state.selectNode,
+  selectedNodeId: state.selectedNodeId,
 });
 
 const nodeTypes = {
@@ -58,7 +60,9 @@ function Flow() {
     addChildNode,
     loadFromStorage,
     initialized,
-    setInitialized
+    setInitialized,
+    selectNode,
+    selectedNodeId
   } = useStore(selector, shallow);
   
   const [connectingNodeId, setConnectingNodeId] = useState<string | null>(null);
@@ -179,6 +183,13 @@ function Flow() {
       setShowSidePanel(false);
     }
   };
+  
+  // 背景クリック時に選択状態をクリア
+  const onPaneClick = useCallback(() => {
+    if (selectedNodeId) {
+      selectNode(null);
+    }
+  }, [selectedNodeId, selectNode]);
 
   return (
     <div className="flex h-screen">
@@ -208,6 +219,7 @@ function Flow() {
           fitView
           minZoom={0.2}
           maxZoom={1.5}
+          onPaneClick={onPaneClick}
         >
           <Header onSearch={handleSearch} />
           {showSidePanel && <SidePanel mode={sidePanelMode} />}

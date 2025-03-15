@@ -27,6 +27,7 @@ body,
   border: none;
   padding: 6px 10px;
   font-weight: 700;
+  transition: all 0.2s ease;
 }
 
 .react-flow__handle.target {
@@ -48,6 +49,12 @@ body,
 
 .react-flow .react-flow__connectionline {
   z-index: 0;
+}
+
+.node-container {
+  width: 100%;
+  position: relative;
+  transition: all 0.2s ease;
 }
 
 .inputWrapper {
@@ -129,4 +136,71 @@ body,
   100% {
     box-shadow: 0 0 0 2px #f6ad55, 0 0 10px 2px rgba(246, 173, 85, 0.5);
   }
+}
+
+/* 選択状態のノードのスタイル */
+.node-selected {
+  transform: scale(1.05);
+  z-index: 20;
+}
+
+.react-flow__node-mindmap .node-selected {
+  box-shadow: 0 0 0 2px #58a6ff, 0 0 8px 2px rgba(88, 166, 255, 0.4);
+}
+
+/* アクションメニュー */
+.action-menu {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 4px;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 4px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  opacity: 0;
+  transform: translateY(-5px);
+  transition: all 0.2s ease;
+  pointer-events: all;
+  animation: fadeIn 0.2s forwards;
+}
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.action-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+}
+
+.add-button {
+  background-color: #e6f7ff;
+  color: #1890ff;
+}
+
+.add-button:hover {
+  background-color: #1890ff;
+  color: white;
+}
+
+.delete-button {
+  background-color: #fff1f0;
+  color: #ff4d4f;
+}
+
+.delete-button:hover {
+  background-color: #ff4d4f;
+  color: white;
 }
