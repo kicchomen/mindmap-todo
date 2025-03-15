@@ -27,10 +27,6 @@ export type RFState = {
   saveToStorage: () => void;
   initialized: boolean;
   setInitialized: (value: boolean) => void;
-  selectedNodeId: string | null;
-  selectNode: (nodeId: string | null) => void;
-  deleteNode: (nodeId: string) => void;
-  addChildNodeDirectly: (parentNodeId: string) => void;
 };
 
 // デフォルトのノードとエッジ
@@ -53,9 +49,6 @@ const useStore = create<RFState>((set, get) => ({
   // デフォルト値で初期化
   nodes: [...defaultNodes],
   edges: [...defaultEdges],
-  
-  // 選択されたノードのID
-  selectedNodeId: null,
 
   // ノード変更
   onNodesChange: (changes: NodeChange[]) => {
@@ -114,45 +107,6 @@ const useStore = create<RFState>((set, get) => ({
     set({
       nodes: [...get().nodes, newNode],
       edges: [...get().edges, newEdge],
-    });
-    
-    // 変更があった時に自動保存
-    setTimeout(() => get().saveToStorage(), 0);
-  },
-  
-  // 子ノードを指定した親ノードに直接追加（ボタンクリック用）
-  addChildNodeDirectly: (parentNodeId: string) => {
-    // 親ノードを取得
-    const parentNode = get().nodes.find(node => node.id === parentNodeId);
-    if (!parentNode) return;
-    
-    // 親ノードの位置を基準に新しい位置を計算
-    // 親ノードの下に配置
-    const position = {
-      x: 0, // 相対位置なのでx=0で親ノードの中央
-      y: 80, // 親ノードの下に80px離れた位置
-    };
-    
-    const newNode = {
-      id: nanoid(),
-      type: 'mindmap',
-      data: { label: 'New Node', collapsed: false },
-      position,
-      parentNode: parentNodeId,
-      dragHandle: '.dragHandle',
-    };
-
-    const newEdge = {
-      id: nanoid(),
-      source: parentNodeId,
-      target: newNode.id,
-    };
-
-    set({
-      nodes: [...get().nodes, newNode],
-      edges: [...get().edges, newEdge],
-      // 新しく作成したノードを選択状態にする
-      selectedNodeId: newNode.id
     });
     
     // 変更があった時に自動保存
@@ -221,57 +175,6 @@ const useStore = create<RFState>((set, get) => ({
     set({ 
       nodes: updatedNodes,
       edges: updatedEdges
-    });
-    
-    // 変更があった時に自動保存
-    setTimeout(() => get().saveToStorage(), 0);
-  },
-  
-  // ノード選択
-  selectNode: (nodeId: string | null) => {
-    set({ selectedNodeId: nodeId });
-  },
-  
-  // ノード削除
-  deleteNode: (nodeId: string) => {
-    // ルートノードは削除不可
-    if (nodeId === 'root') return;
-    
-    // 削除対象ノードの子孫IDを再帰的に取得
-    const getDescendantIds = (targetId: string): string[] => {
-      const directChildren = get().nodes
-        .filter((node) => node.parentNode === targetId)
-        .map((node) => node.id);
-      
-      const allDescendants = [...directChildren];
-      
-      directChildren.forEach((childId) => {
-        allDescendants.push(...getDescendantIds(childId));
-      });
-      
-      return allDescendants;
-    };
-    
-    // 削除するノードの子孫を含む全ノードID
-    const descendantIds = getDescendantIds(nodeId);
-    const allNodeIdsToDelete = [nodeId, ...descendantIds];
-    
-    // 削除対象ノードとその子孫を除外したノード配列を作成
-    const updatedNodes = get().nodes.filter(
-      (node) => !allNodeIdsToDelete.includes(node.id)
-    );
-    
-    // 削除対象ノードに関連するエッジを除外したエッジ配列を作成
-    const updatedEdges = get().edges.filter(
-      (edge) => 
-        !allNodeIdsToDelete.includes(edge.source) && 
-        !allNodeIdsToDelete.includes(edge.target)
-    );
-    
-    set({
-      nodes: updatedNodes,
-      edges: updatedEdges,
-      selectedNodeId: null, // 選択状態をクリア
     });
     
     // 変更があった時に自動保存
